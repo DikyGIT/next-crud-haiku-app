@@ -1,5 +1,8 @@
 "use server";
 
+import { getCollection } from "@/libs/db";
+import bcrypt from "bcrypt";
+
 function isAlphaNumeric(x) {
   const regex = /^[a-zA-Z0-9]*$/;
   return regex.test(x);
@@ -42,7 +45,7 @@ export const register = async (prevState, formData) => {
     errors.username = "You must provide a username.";
   }
 
-  if (ourUser.username.length < 12) {
+  if (ourUser.password.length < 12) {
     errors.password = "Password must be at least 12 characters.";
   }
   if (ourUser.password.length > 50) {
@@ -59,7 +62,14 @@ export const register = async (prevState, formData) => {
     };
   }
 
+  // hash password first
+  const salt = bcrypt.genSaltSync(10);
+  ourUser.password = bcrypt.hashSync(ourUser.password, salt);
+
   // storing a new user in the database
+  const usersCollection = await getCollection("users");
+  await usersCollection.insertOne(ourUser);
+
   // log the user in by giving them a cookie
 
   return {
